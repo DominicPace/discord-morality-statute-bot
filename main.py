@@ -5,13 +5,14 @@ from discord.ext import commands
 from profanity_check import predict
 from pytz import timezone
 from replit import db
-from keep_alive import keep_alive
 
 prefix = "/"
 token = os.environ['TOKEN']
 bot = commands.Bot(command_prefix=prefix, intents=discord.Intents.all())
 
 def update_fines(user_name):
+  fine = 0
+  
   try:
     fine = db[user_name]
     fine = fine + 1
@@ -88,6 +89,6 @@ async def top10(interaction: discord.Interaction):
 async def outstandingfines(interaction: discord.Interaction, user: discord.User):
   targeted_user = str(user.id)
   fines = db[targeted_user]
-  await interaction.response.send_message(f"Outstanding fines for {user.name}: {fines} Credits")
+  await interaction.response.send_message(f"Outstanding fines for {user.nick}: {fines} Credits")
 
 bot.run(token)
