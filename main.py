@@ -1,11 +1,12 @@
-from datetime import datetime
-from pytz import timezone
 import discord
-from discord.ext import commands
-import os
-from profanity_check import predict
-from replit import db
 import operator
+import os
+from datetime import datetime
+from discord.ext import commands
+from profanity_check import predict
+from pytz import timezone
+from replit import db
+from keep_alive import keep_alive
 
 prefix = "/"
 token = os.environ['TOKEN']
@@ -92,4 +93,5 @@ async def top10(interaction: discord.Interaction):
 async def outstandingfines(interaction: discord.Interaction, user: str):
   await interaction.response.send_message(f"Outstanding fines {str}")
 
+keep_alive()
 bot.run(token)
