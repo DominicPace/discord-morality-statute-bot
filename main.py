@@ -90,5 +90,4 @@ async def outstandingfines(interaction: discord.Interaction, user: discord.User)
   fines = db[targeted_user]
   await interaction.response.send_message(f"Outstanding fines for {user.name}: {fines}")
 
-keep_alive()
 bot.run(token)
