@@ -88,6 +88,6 @@ async def top10(interaction: discord.Interaction):
 async def outstandingfines(interaction: discord.Interaction, user: discord.User):
   targeted_user = str(user.id)
   fines = db[targeted_user]
-  await interaction.response.send_message(f"Outstanding fines for {user.name}: {fines}")
+  await interaction.response.send_message(f"Outstanding fines for {user.name}: {fines} Credits")
 
 bot.run(token)
