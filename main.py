@@ -1,29 +1,57 @@
+# Requires Python 3.8, dicord.py 2.1.0, and most importantly, alt-profanity-check (not profanity-check)!
+
 import discord
 import os
+import sqlite3
 from datetime import datetime
 from discord.ext import commands
 from profanity_check import predict
 from pytz import timezone
-from replit import db
 
+# Global variables
+os.environ["TOKEN"] = ""
 prefix = "/"
 token = os.environ['TOKEN']
 bot = commands.Bot(command_prefix=prefix, intents=discord.Intents.all())
 
+# This function updates fines from sqlite3. If the user has no existing fines it creates a new entry.
 def update_fines(user_name):
   fine = 0
+  user_name = str(user_name)
   
-  try:
-    fine = db[user_name]
+  db = sqlite3.connect('main.sqlite')
+  cursor = db.cursor()
+  sql = ("SELECT fines FROM violators WHERE user = ?")
+  val = [user_name]
+  cursor.execute(sql, val)
+  fine = cursor.fetchone()
+
+  if fine is None:
+    sql = ("INSERT INTO violators(user, fines) VALUES (?,?)")
+    val = (user_name, 1)
+    fine = 1
+  elif fine is not None:
+    fine = fine[0]
     fine = fine + 1
-    db[user_name] = fine
-  except:
-    db[user_name] = 1
+    
+    sql = ("UPDATE violators SET fines = ? WHERE user = ?")
+    val = (fine, user_name)
+
+  cursor.execute(sql, val)
+  db.commit()
+  cursor.close()
+  db.close()
 
   return fine
 
+# Main function of bot.
 @bot.event
 async def on_ready():
+  # Remvoe on first time to create DB then add comments back. This should prob be a function that creats the DB if one doesn't already exist.
+  # db = sqlite3.connect('main.sqlite')
+  # cursor = db.cursor()
+  # cursor.execute("CREATE TABLE IF NOT EXISTS violators(user TEXT, fines INT)")
+
   print("The bot is online!")
   try:
     synced = await bot.tree.sync()
@@ -31,6 +59,7 @@ async def on_ready():
   except Exception as e:
     print(e)
 
+# This function monitors chat for infractions.
 @bot.event
 async def on_message(ctx):
   if ctx.author.id == bot.user.id:
@@ -49,9 +78,11 @@ async def on_message(ctx):
     violation = discord.Embed(
       color=discord.Color.red(),
       title='MORALITY VIOLATION',
-      description=f"Time: {current_time} EST \n \
+      description=f"{ctx.author.mention}, you are fined 1 credit for a violation of the verbal morality statue. \n \
+      \n \
+      Time: {current_time} EST \n \
       Date: {current_date} \n \
-      Name: {ctx.author.mention} \n \
+      Name: {ctx.author} \n \
       Server: {server} \n \
       Channel: #{channel} \n \
       Punishment: Warning & fine \n \
@@ -61,13 +92,18 @@ async def on_message(ctx):
 
     await ctx.channel.send(embed=violation)
 
+# This function adds a "/" command to Discord that reports a top 10 list of violators stored in the sqlite3 DB.
 @bot.tree.command(name="top10-violators", description="List of the Top 10 Morality Violators")
 async def top10(interaction: discord.Interaction):
-  my_dict = dict(db.items())
-  
-  sorted_dict = dict(sorted(my_dict.items(), key=lambda item: item[1], reverse=True))
-  
-  top10_dict = dict(list(sorted_dict.items())[:10])
+  db = sqlite3.connect('main.sqlite')
+  cursor = db.cursor()
+  sql = ("SELECT user, fines FROM violators ORDER BY fines DESC LIMIT 10")
+  cursor.execute(sql)
+  fine = cursor.fetchall()
+  cursor.close()
+  db.close()
+
+  top10_dict = dict(fine)
   items = top10_dict.items()
 
   violators_string = ""
@@ -85,10 +121,24 @@ async def top10(interaction: discord.Interaction):
     
   await interaction.response.send_message(embed=violators)
 
+# This function adds a "/" command to Discord that allows one user to lookup the fines of another (single) user.
 @bot.tree.command(name="outstanding-fines", description="Provide total outstanding fines for a user")
 async def outstandingfines(interaction: discord.Interaction, user: discord.User):
-  targeted_user = str(user.id)
-  fines = db[targeted_user]
-  await interaction.response.send_message(f"Outstanding fines for {user.nick}: {fines} Credits")
+  user_name = str(user.id)
+  
+  db = sqlite3.connect('main.sqlite')
+  cursor = db.cursor()
+  sql = ("SELECT fines FROM violators WHERE user = ?")
+  val = [user_name]
+  try:
+    cursor.execute(sql, val)
+    fines = cursor.fetchone()[0]
+  except:
+    fines = 0
+
+  cursor.close()
+  db.close()
+
+  await interaction.response.send_message(f"Outstanding fines for {user.name}: {fines} Credits")
 
 bot.run(token)
