@@ -78,17 +78,10 @@ async def on_message(ctx):
     violation = discord.Embed(
       color=discord.Color.red(),
       title='MORALITY VIOLATION',
-      description=f"{ctx.author.mention}, you are fined 1 credit for a violation of the verbal morality statue. \n \
-      \n \
-      Time: {current_time} EST \n \
-      Date: {current_date} \n \
-      Name: {ctx.author} \n \
-      Server: {server} \n \
-      Channel: #{channel} \n \
-      Punishment: Warning & fine \n \
-      Fine: 1 Credit \n \
-      Outstanding Fines: {outstandingfines} Credit(s)"
+      description=f"{ctx.author.mention}, you are fined 1 credit for a violation of the verbal morality statue. \n \n Outstanding Fines: {outstandingfines} Credit(s)"
     )
+    
+    ### REMOVED Time: {current_time} EST \n Date: {current_date} \n Name: {ctx.author} \n Server: {server} \n Channel: #{channel} \n Punishment: Warning & fine \n Fine: 1 Credit \n
 
     await ctx.channel.send(embed=violation)
 
